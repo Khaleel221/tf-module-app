@@ -1,6 +1,6 @@
 resource "aws_security_group" "main" {
-  name        = "${var.name}-${env}"
-  description = "${var.name}-${env}"
+  name        = "${var.name}-${var.env}"
+  description = "${var.name}-${var.env}"
   ingress {
     from_port        = 22
     to_port          = 22
@@ -29,13 +29,13 @@ resource "aws_instance" "node" {
   vpc_security_group_ids = [aws_security_group.main.id]
 
   tags = {
-    Name = "${var.name}-${env}"
+    Name = "${var.name}-${var.env}"
   }
 }
 # Create DNS Record in Route53
 resource "aws_route53_record" "record" {
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = "${var.name}-${env}.khaleel221.shop"
+  name    = "${var.name}-${var.env}.khaleel221.shop"
   type    = "A"
   ttl     = 30
   records = [aws_instance.node.private_ip]
