@@ -1,4 +1,4 @@
-resource "aws_security_group" "example" {
+resource "aws_security_group" "main" {
   name        = "${var.name}-${env}"
   description = "${var.name}-${env}"
   ingress {
@@ -24,7 +24,7 @@ resource "aws_security_group" "example" {
 
 
 resource "aws_instance" "node" {
-  ami           = data.aws.ami.image_id
+  ami           = data.aws_ami.ami.image_id
   instance_type = var.instance_type
   vpc_security_group_ids = [aws_security_group.main.id]
 
@@ -45,16 +45,20 @@ resource "aws_route53_record" "record" {
 resource "null_resource" "provisioner" {
   depends_on = [aws_route53_record.record]
 
-  provisioner "local-exec" {
-    command = <<EOT
-      sleep 120;
-      cd /home/ec2-user/Expense-Ansible/;
-      ansible-playbook -i ${aws_instance.node.private_ip}, \
-        -e ansible_user=ec2-user \
-        -e ansible_password=DevOps321 \
-        -e role_name=${var.name} \
-        -e env=${var.env}\
-        expense.yml
-    EOT
+  connection {
+    host     = aws_instance.node.private_ip
+    user     = "ec2-user"
+    password = "DevOps321"
+    type     = "ssh"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "ansible-pull -i localhost, \
+      -U https://github.com/Khaleel221/Expense-Ansible \
+      -e role_name=${var.name} \
+      -e env=${var.env} \
+      expense.yml"
+    ]
   }
 }
